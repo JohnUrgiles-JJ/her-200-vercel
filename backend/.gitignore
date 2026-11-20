@@ -1,0 +1,95 @@
+# ---------------------------
+# Django
+# ---------------------------
+*.log
+*.pot
+*.pyc
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+media/
+staticfiles/
+static_root/
+
+# ---------------------------
+# Environment / secrets
+# ---------------------------
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# ---------------------------
+# Virtual environments
+# ---------------------------
+venv/
+.venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# ---------------------------
+# Python bytecode / cache
+# ---------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+
+# ---------------------------
+# Packaging / build
+# ---------------------------
+build/
+dist/
+*.egg-info/
+.eggs/
+*.egg
+pip-wheel-metadata/
+wheels/
+
+# ---------------------------
+# Testing / coverage
+# ---------------------------
+.coverage
+.coverage.*
+htmlcov/
+.pytest_cache/
+.tox/
+.nox/
+coverage.xml
+*.cover
+.hypothesis/
+
+# ---------------------------
+# Type checkers / linters
+# ---------------------------
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pyre/
+.ruff_cache/
+
+# ---------------------------
+# Celery
+# ---------------------------
+celerybeat-schedule
+celerybeat.pid
+
+# ---------------------------
+# Editors / IDEs
+# ---------------------------
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ---------------------------
+# OS files
+# ---------------------------
+.DS_Store
+Thumbs.db
+desktop.ini
+ConnectHER_Backend_Plan.md
+PROGRESS.md
