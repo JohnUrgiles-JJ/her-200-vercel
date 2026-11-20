@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { Avatar } from "./ui";
 import { Status, useApi, type useActivity } from "./session";
 import {

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Avatar, PageHeader } from "../_components/ui";
+import { Avatar, EmptyState, PageHeader } from "../_components/ui";
 import { Status, useActivity, useApi } from "../_components/session";
 import { initials, timeAgo, type InboxItem, type MentorListItem } from "@/lib/api";
 
@@ -13,6 +13,9 @@ export default function MyMentorsPage() {
   if (user.role === "mentor") return <MyMentees {...inbox} />;
   const matched = new Set(questions.data?.flatMap((q) => q.matches.map((m) => m.mentor_id)) ?? []);
   const sorted = [...(data ?? [])].sort((a, b) => Number(matched.has(b.mentor_id)) - Number(matched.has(a.mentor_id)));
+
+  if (data && data.length === 0)
+    return <EmptyState icon="users" title="My mentors" text="Your mentors will live here. Ask a question to get matched with your first one." />;
 
   return (
     <>
@@ -54,6 +57,9 @@ function MyMentees({ data, error, loading }: { data: InboxItem[] | null; error: 
   // Group inbox items by mentee: every student whose question was matched to this mentor.
   const mentees = new Map<string, InboxItem[]>();
   for (const item of data ?? []) mentees.set(item.mentee_name, [...(mentees.get(item.mentee_name) ?? []), item]);
+
+  if (data && data.length === 0)
+    return <EmptyState icon="users" title="My mentees" text="Your mentees will live here. Students matched to your fields will show up as they ask questions." />;
 
   return (
     <>

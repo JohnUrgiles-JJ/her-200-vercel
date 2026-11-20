@@ -4,12 +4,17 @@ import { useState } from "react";
 import Feed from "./_components/Feed";
 import Today from "./_components/Today";
 import { Avatar, Eyebrow, Icon } from "./_components/ui";
+<<<<<<< HEAD
 import { useActivity } from "./_components/session";
 import { initials, postJSON, shortName, type Question } from "@/lib/api";
+=======
+import { useSession } from "./_components/session";
+import { initials, postJSON, type Question } from "@/lib/api";
+>>>>>>> d820997e213fdb82b442e83e8bb3f189a6f7c2a1
 
 export default function HomePage() {
-  const activity = useActivity();
-  const { user, questions } = activity;
+  const { user } = useSession();
+  const [feedKey, setFeedKey] = useState(0);
   const [error, setError] = useState("");
   const [sending, setSending] = useState(false);
 
@@ -25,7 +30,7 @@ export default function HomePage() {
     try {
       await postJSON<Question>("/api/questions/", { text, is_public });
       form.reset();
-      questions.reload();
+      setFeedKey((k) => k + 1);
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -62,7 +67,7 @@ export default function HomePage() {
         </>
       )}
 
-      <Feed activity={activity} />
+      <Feed key={feedKey} />
     </>
   );
 }
