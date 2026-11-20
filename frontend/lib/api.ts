@@ -11,6 +11,8 @@ export type Answer = { id: number; text: string; created_at: string };
 export type Match = {
   match_id: number; mentor_id: number; name: string; headline: string; company: string;
   reason: string; rank?: number; status?: Status; answers: Answer[];
+  /** 0–100. Not sent by the backend yet; shown when present. */
+  match_score?: number;
 };
 export type Question = { id: number; text: string; is_public: boolean; created_at: string; matches: Match[] };
 /** A mentor's reply on the community feed (no private matching reason). */
@@ -20,6 +22,8 @@ export type CommunityQuestion = { id: number; text: string; mentee_name: string;
 export type InboxItem = {
   match_id: number; question_id: number; question_text: string; mentee_name: string;
   reason: string; status?: Status; created_at: string; answers: Answer[];
+  /** 0–100. Not sent by the backend yet; shown when present. */
+  match_score?: number;
 };
 export type FeedPost = { id: number; text: string; created_at: string; author_name: string; answer_count: number };
 export type MentorProfile = {
