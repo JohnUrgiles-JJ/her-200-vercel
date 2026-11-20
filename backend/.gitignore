@@ -91,3 +91,5 @@ celerybeat.pid
 .DS_Store
 Thumbs.db
 desktop.ini
+ConnectHER_Backend_Plan.md
+PROGRESS.md

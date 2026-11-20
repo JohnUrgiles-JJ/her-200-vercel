@@ -1,0 +1,9 @@
+django>=5.0
+djangorestframework
+drf-spectacular
+django-cors-headers
+channels>=4
+daphne
+python-dotenv
+anthropic
+openai
