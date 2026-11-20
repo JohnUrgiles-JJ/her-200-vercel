@@ -1,4 +1,12 @@
-from django.urls import path  # noqa: F401  (used once endpoints are added in Phase 1)
+from django.urls import path
 
-# API routes live here, mounted under /api/ in connecther/urls.py.
-urlpatterns = []
+from . import views
+
+# Mounted under /api/ in connecther/urls.py.
+urlpatterns = [
+    path("signup/", views.SignupView.as_view(), name="signup"),
+    path("login/", views.LoginView.as_view(), name="login"),
+    path("me/", views.MeView.as_view(), name="me"),
+    path("mentor-profile/", views.MentorProfileView.as_view(), name="mentor-profile"),
+    path("mentors/", views.MentorListView.as_view(), name="mentors"),
+]
