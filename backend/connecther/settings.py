@@ -189,10 +189,17 @@ EMAIL_HOST = "smtp.gmail.com"
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "")
-EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
+# Gmail shows app passwords as "abcd efgh ijkl mnop"; the spaces aren't part of it, so strip them.
+EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "").replace(" ", "")
 DEFAULT_FROM_EMAIL = (
     f"ConnectHER <{EMAIL_HOST_USER}>" if EMAIL_HOST_USER else "ConnectHER <noreply@connecther.local>"
 )
+# Seconds before an SMTP connect/send gives up. Emails are sent off the request thread, but a hung
+# Gmail connection shouldn't keep a thread alive forever.
+EMAIL_TIMEOUT = 10
+# True sends notification emails inline instead of on a background thread. Tests set it; leave it off
+# otherwise so SMTP never slows an API response.
+NOTIFY_EMAILS_SYNC = os.getenv("NOTIFY_EMAILS_SYNC", "false").lower() == "true"
 
 
 # --- App settings -------------------------------------------------------
