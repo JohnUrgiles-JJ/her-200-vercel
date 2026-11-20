@@ -1,7 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import { Avatar } from "./ui";
-import { Status, useApi, type useActivity } from "./session";
+import { Status, useActivity, useApi } from "./session";
 import {
   initials, patchJSON, postJSON, timeAgo,
   type Answer, type CommunityMatch, type CommunityQuestion, type InboxItem, type Match, type Question,
@@ -10,7 +11,9 @@ import {
 type Activity = ReturnType<typeof useActivity>;
 type Tab = "mine" | "community";
 
-export default function Feed({ activity }: { activity: Activity }) {
+/** Home page feed. Loads its own data; the page remounts it (via `key`) after a new question is asked. */
+export default function Feed() {
+  const activity = useActivity();
   const mentor = activity.user.role === "mentor";
   const [tab, setTab] = useState<Tab>("mine");
   // Loaded the first time the tab is opened, then kept.

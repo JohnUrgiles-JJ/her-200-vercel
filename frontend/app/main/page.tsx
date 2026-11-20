@@ -4,13 +4,8 @@ import { useState } from "react";
 import Feed from "./_components/Feed";
 import Today from "./_components/Today";
 import { Avatar, Eyebrow, Icon } from "./_components/ui";
-<<<<<<< HEAD
-import { useActivity } from "./_components/session";
-import { initials, postJSON, shortName, type Question } from "@/lib/api";
-=======
 import { useSession } from "./_components/session";
-import { initials, postJSON, type Question } from "@/lib/api";
->>>>>>> d820997e213fdb82b442e83e8bb3f189a6f7c2a1
+import { initials, postJSON, shortName, type Question } from "@/lib/api";
 
 export default function HomePage() {
   const { user } = useSession();
