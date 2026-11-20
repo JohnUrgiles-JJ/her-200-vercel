@@ -33,7 +33,7 @@ export default function LoginPage() {
   return (
     <AuthShell
       title="Welcome back"
-      subtitle={<>New to ConnectHER? <Link href="/signup" className="font-medium text-fuchsia-600">Sign up</Link></>}
+      subtitle={<>New to ConnectHER? <Link href="/signup" className="font-medium text-primary">Sign up</Link></>}
     >
       <form onSubmit={onSubmit} className="space-y-4">
         <label className={labelClass}>
@@ -44,7 +44,7 @@ export default function LoginPage() {
           Password
           <input name="password" type="password" required className={inputClass} />
         </label>
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error && <p className="text-sm text-danger">{error}</p>}
         <button type="submit" disabled={loading} className={buttonClass}>
           {loading ? "Logging in…" : "Log in"}
         </button>

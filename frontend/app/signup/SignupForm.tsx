@@ -53,9 +53,9 @@ export default function SignupForm() {
   return (
     <AuthShell
       title="Create your account"
-      subtitle={<>Already have an account? <Link href="/login" className="font-medium text-fuchsia-600">Log in</Link></>}
+      subtitle={<>Already have an account? <Link href="/login" className="font-medium text-primary">Log in</Link></>}
     >
-      <div className="grid grid-cols-2 gap-2 rounded-full bg-zinc-100 p-1 dark:bg-zinc-900" role="radiogroup" aria-label="I am a">
+      <div className="grid grid-cols-2 gap-2 rounded-full bg-surface-sunken p-1" role="radiogroup" aria-label="I am a">
         {(["mentee", "mentor"] as Role[]).map((r) => (
           <button
             key={r}
@@ -64,14 +64,14 @@ export default function SignupForm() {
             aria-checked={role === r}
             onClick={() => setRole(r)}
             className={`rounded-full py-2 text-sm font-medium capitalize ${
-              role === r ? "bg-fuchsia-600 text-white" : "text-zinc-600 dark:text-zinc-400"
+              role === r ? "bg-primary text-on-primary" : "text-muted"
             }`}
           >
             {r}
           </button>
         ))}
       </div>
-      <p className="mt-3 text-sm text-zinc-600 dark:text-zinc-400">
+      <p className="mt-3 text-sm text-muted">
         {role === "mentee"
           ? "Ask any career or STEM question and get matched with mentors."
           : "Answer questions from students in your fields — minutes per question."}
@@ -110,25 +110,25 @@ export default function SignupForm() {
             <label className={labelClass}>
               Fields
               <input name="fields" required placeholder="UX design, Product" className={inputClass} />
-              <span className="mt-1 block text-xs font-normal text-zinc-500">Separate with commas</span>
+              <span className="mt-1 block text-xs font-normal text-subtle">Separate with commas</span>
             </label>
             <label className={labelClass}>
               Topics you&apos;re open to
               <input name="topics" required placeholder="Career switching, Portfolios, Interviews" className={inputClass} />
-              <span className="mt-1 block text-xs font-normal text-zinc-500">Separate with commas</span>
+              <span className="mt-1 block text-xs font-normal text-subtle">Separate with commas</span>
             </label>
             <label className={labelClass}>
               Short bio
               <textarea name="bio" required rows={3} className={inputClass} />
             </label>
-            <label className="flex items-start gap-3 text-sm text-zinc-600 dark:text-zinc-400">
-              <input name="agree" type="checkbox" required className="mt-1 accent-fuchsia-600" />
+            <label className="flex items-start gap-3 text-sm text-muted">
+              <input name="agree" type="checkbox" required className="mt-1 accent-primary" />
               I agree to answer questions from students about my experience and fields.
             </label>
           </>
         )}
 
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error && <p className="text-sm text-danger">{error}</p>}
         <button type="submit" disabled={loading} className={buttonClass}>
           {loading ? "Creating account…" : `Sign up as a ${role}`}
         </button>

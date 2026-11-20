@@ -29,15 +29,15 @@ const impact = [
 
 function Steps({ title, steps, accent }: { title: string; steps: string[]; accent: string }) {
   return (
-    <div className="rounded-2xl border border-zinc-200 bg-white p-8 dark:border-zinc-800 dark:bg-zinc-950">
+    <div className="rounded-2xl border border-border bg-surface p-8">
       <h3 className="text-xl font-semibold">{title}</h3>
       <ol className="mt-6 space-y-4">
         {steps.map((s, i) => (
           <li key={s} className="flex gap-4">
-            <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-sm font-semibold text-white ${accent}`}>
+            <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-sm font-semibold text-on-primary ${accent}`}>
               {i + 1}
             </span>
-            <span className="text-zinc-600 dark:text-zinc-400">{s}</span>
+            <span className="text-muted">{s}</span>
           </li>
         ))}
       </ol>
@@ -50,13 +50,13 @@ export default function Home() {
     <div className="flex flex-1 flex-col font-sans">
       <header className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-6">
         <span className="text-xl font-bold tracking-tight">
-          Connect<span className="text-fuchsia-600">HER</span>
+          Connect<span className="text-primary">HER</span>
         </span>
         <nav className="flex items-center gap-6 text-sm font-medium">
-          <a href="#how" className="hidden text-zinc-600 hover:text-foreground sm:inline dark:text-zinc-400">How it works</a>
-          <a href="#impact" className="hidden text-zinc-600 hover:text-foreground sm:inline dark:text-zinc-400">Impact</a>
-          <a href="/login" className="text-zinc-600 hover:text-foreground dark:text-zinc-400">Log in</a>
-          <a href="/signup" className="rounded-full bg-fuchsia-600 px-4 py-2 text-white hover:bg-fuchsia-700">Sign up</a>
+          <a href="#how" className="hidden text-muted hover:text-foreground sm:inline">How it works</a>
+          <a href="#impact" className="hidden text-muted hover:text-foreground sm:inline">Impact</a>
+          <a href="/login" className="text-muted hover:text-foreground">Log in</a>
+          <a href="/signup" className="rounded-full bg-primary px-4 py-2 text-on-primary hover:bg-primary-hover">Sign up</a>
         </nav>
       </header>
 
@@ -64,41 +64,41 @@ export default function Home() {
         {/* Hero */}
         <section className="mx-auto grid max-w-6xl items-center gap-12 px-6 py-20 lg:grid-cols-2">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-wider text-fuchsia-600">
+            <p className="text-sm font-semibold uppercase tracking-wider text-primary">
               Mentorship without the network
             </p>
             <h1 className="mt-4 text-4xl font-bold leading-tight tracking-tight sm:text-5xl">
               Ask any career or STEM question. We&apos;ll find who should answer it.
             </h1>
-            <p className="mt-6 text-lg leading-8 text-zinc-600 dark:text-zinc-400">
+            <p className="mt-6 text-lg leading-8 text-muted">
               ConnectHER uses AI to route your question to the mentors best placed to answer it.
               They&apos;re notified instantly by email and live in-app — no cold messages required.
             </p>
             <div className="mt-8 flex flex-col gap-4 sm:flex-row">
-              <a href="/signup?role=mentee" className="flex h-12 items-center justify-center rounded-full bg-fuchsia-600 px-6 font-medium text-white hover:bg-fuchsia-700">
+              <a href="/signup?role=mentee" className="flex h-12 items-center justify-center rounded-full bg-primary px-6 font-medium text-on-primary hover:bg-primary-hover">
                 Ask a question
               </a>
-              <a href="/signup?role=mentor" className="flex h-12 items-center justify-center rounded-full border border-zinc-300 px-6 font-medium hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-900">
+              <a href="/signup?role=mentor" className="flex h-12 items-center justify-center rounded-full border border-border-strong px-6 font-medium hover:bg-surface-muted">
                 Become a mentor
               </a>
             </div>
           </div>
 
           {/* Example match preview */}
-          <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
-            <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500">Your question</p>
-            <p className="mt-2 rounded-xl bg-white p-4 font-medium dark:bg-zinc-900">
+          <div className="rounded-2xl border border-border bg-surface-muted p-6 shadow-sm">
+            <p className="text-xs font-semibold uppercase tracking-wider text-subtle">Your question</p>
+            <p className="mt-2 rounded-xl bg-surface p-4 font-medium">
               How do I break into UX design without a design degree?
             </p>
-            <p className="mt-6 text-xs font-semibold uppercase tracking-wider text-zinc-500">Top 3 matched mentors</p>
+            <p className="mt-6 text-xs font-semibold uppercase tracking-wider text-subtle">Top 3 matched mentors</p>
             <ul className="mt-2 space-y-3">
               {exampleMatches.map((m) => (
-                <li key={m.name} className="rounded-xl bg-white p-4 dark:bg-zinc-900">
+                <li key={m.name} className="rounded-xl bg-surface p-4">
                   <div className="flex items-baseline justify-between gap-2">
                     <span className="font-semibold">{m.name}</span>
-                    <span className="text-xs text-zinc-500">{m.role}</span>
+                    <span className="text-xs text-subtle">{m.role}</span>
                   </div>
-                  <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{m.reason}</p>
+                  <p className="mt-1 text-sm text-muted">{m.reason}</p>
                 </li>
               ))}
             </ul>
@@ -106,15 +106,15 @@ export default function Home() {
         </section>
 
         {/* Problem */}
-        <section className="bg-zinc-50 py-20 dark:bg-zinc-950">
+        <section className="bg-surface-muted py-20">
           <div className="mx-auto max-w-3xl px-6 text-center">
             <h2 className="text-3xl font-bold tracking-tight">Too many questions go unasked</h2>
-            <p className="mt-6 text-lg leading-8 text-zinc-600 dark:text-zinc-400">
+            <p className="mt-6 text-lg leading-8 text-muted">
               First-generation students, women, and students from marginalized communities in STEM
               often don&apos;t have a professional network. They don&apos;t know who to ask, or how to ask —
               and cold outreach is intimidating.
             </p>
-            <p className="mt-4 text-lg leading-8 text-zinc-600 dark:text-zinc-400">
+            <p className="mt-4 text-lg leading-8 text-muted">
               With ConnectHER, you ask once. AI finds the right mentors — people who have already said
               they&apos;re happy to answer — and delivers your question to them.
             </p>
@@ -125,20 +125,20 @@ export default function Home() {
         <section id="how" className="mx-auto max-w-6xl px-6 py-20">
           <h2 className="text-center text-3xl font-bold tracking-tight">How it works</h2>
           <div className="mt-12 grid gap-8 md:grid-cols-2">
-            <Steps title="For mentees" steps={menteeSteps} accent="bg-fuchsia-600" />
-            <Steps title="For mentors" steps={mentorSteps} accent="bg-violet-600" />
+            <Steps title="For mentees" steps={menteeSteps} accent="bg-primary" />
+            <Steps title="For mentors" steps={mentorSteps} accent="bg-secondary" />
           </div>
         </section>
 
         {/* Impact */}
-        <section id="impact" className="bg-zinc-50 py-20 dark:bg-zinc-950">
+        <section id="impact" className="bg-surface-muted py-20">
           <div className="mx-auto max-w-6xl px-6">
             <h2 className="text-center text-3xl font-bold tracking-tight">The impact</h2>
             <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
               {impact.map((i) => (
-                <div key={i.title} className="rounded-2xl bg-white p-6 dark:bg-zinc-900">
+                <div key={i.title} className="rounded-2xl bg-surface p-6">
                   <h3 className="font-semibold">{i.title}</h3>
-                  <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">{i.body}</p>
+                  <p className="mt-2 text-sm text-muted">{i.body}</p>
                 </div>
               ))}
             </div>
@@ -148,21 +148,21 @@ export default function Home() {
         {/* CTA */}
         <section className="mx-auto max-w-3xl px-6 py-20 text-center">
           <h2 className="text-3xl font-bold tracking-tight">Your question deserves an answer</h2>
-          <p className="mt-4 text-lg text-zinc-600 dark:text-zinc-400">
+          <p className="mt-4 text-lg text-muted">
             Join as a mentee to ask, or as a mentor to help the next generation in STEM.
           </p>
           <div className="mt-8 flex flex-col justify-center gap-4 sm:flex-row">
-            <a href="/signup?role=mentee" className="flex h-12 items-center justify-center rounded-full bg-fuchsia-600 px-6 font-medium text-white hover:bg-fuchsia-700">
+            <a href="/signup?role=mentee" className="flex h-12 items-center justify-center rounded-full bg-primary px-6 font-medium text-on-primary hover:bg-primary-hover">
               Join as a mentee
             </a>
-            <a href="/signup?role=mentor" className="flex h-12 items-center justify-center rounded-full border border-zinc-300 px-6 font-medium hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-900">
+            <a href="/signup?role=mentor" className="flex h-12 items-center justify-center rounded-full border border-border-strong px-6 font-medium hover:bg-surface-muted">
               Join as a mentor
             </a>
           </div>
         </section>
       </main>
 
-      <footer className="border-t border-zinc-200 py-8 text-center text-sm text-zinc-500 dark:border-zinc-800">
+      <footer className="border-t border-border py-8 text-center text-sm text-subtle">
         © 2026 ConnectHER
       </footer>
     </div>
