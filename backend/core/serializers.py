@@ -160,6 +160,41 @@ class QuestionSerializer(serializers.ModelSerializer):
         fields = ["id", "text", "created_at", "matches"]
 
 
+def short_name(user):
+    """First name plus last initial, for privacy: "Maria Lopez" -> "Maria L.". A single name is kept as is."""
+    parts = _display_name(user).split()
+    if not parts:
+        return ""
+    if len(parts) == 1:
+        return parts[0]
+    return f"{parts[0]} {parts[-1][0]}."
+
+
+class InboxItemSerializer(serializers.ModelSerializer):
+    """The `InboxItem` shape from Section 3.1. Expects question__mentee__profile and answers to be
+    loaded (see inbox_queryset in views.py). created_at is the question's."""
+
+    match_id = serializers.IntegerField(source="id", read_only=True)
+    question_id = serializers.IntegerField(read_only=True)
+    question_text = serializers.CharField(source="question.text", read_only=True)
+    mentee_name = serializers.SerializerMethodField()
+    created_at = serializers.DateTimeField(source="question.created_at", read_only=True)
+    answers = AnswerSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = QuestionMatch
+        fields = ["match_id", "question_id", "question_text", "mentee_name", "reason", "status", "created_at", "answers"]
+
+    def get_mentee_name(self, obj) -> str:
+        return short_name(obj.question.mentee)
+
+
+class AnswerCreateSerializer(serializers.Serializer):
+    """Documents the POST /matches/<id>/answer/ body for the API schema. Validation is done in the view."""
+
+    text = serializers.CharField(min_length=1, max_length=3000)
+
+
 class QuestionCreateSerializer(serializers.Serializer):
     """Documents the POST /questions/ body for the API schema. Validation is done in the view."""
 

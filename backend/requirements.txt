@@ -12,3 +12,6 @@ openai==3.57.0
 dj-database-url==3.1.2
 psycopg[binary]==3.3.9
 whitenoise==6.12.0
+
+# Manual WebSocket testing (scripts/ws_listen.py)
+websockets==17.4

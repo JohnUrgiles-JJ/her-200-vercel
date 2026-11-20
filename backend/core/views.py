@@ -4,7 +4,7 @@ from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from django.db import DatabaseError, IntegrityError, connection, transaction
 from django.db.models import Prefetch, Q
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -12,10 +12,13 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from . import matching, notify
-from .models import MentorProfile, Profile, Question, QuestionMatch
+from .models import Answer, MentorProfile, Profile, Question, QuestionMatch
 from .permissions import IsMentee, IsMentor
 from .serializers import (
+    AnswerCreateSerializer,
+    AnswerSerializer,
     AuthResponseSerializer,
+    InboxItemSerializer,
     LoginSerializer,
     MentorListItemSerializer,
     MentorProfileSerializer,
@@ -34,6 +37,12 @@ NO_MENTOR_PROFILE = "Mentor profile not found."
 QUESTION_MIN, QUESTION_MAX = 10, 1000
 QUESTION_REQUIRED = "Question text is required."
 QUESTION_LENGTH = f"Question must be between {QUESTION_MIN} and {QUESTION_MAX} characters."
+ANSWER_MAX = 3000
+ANSWER_REQUIRED = "Answer text is required."
+ANSWER_LENGTH = f"Answer must be at most {ANSWER_MAX} characters."
+INBOX_STATUSES = sorted(c[0] for c in QuestionMatch.STATUS)
+INBOX_BAD_STATUS = "status must be one of: answered, sent."
+NOT_FOUND = "Not found."
 
 
 class HealthView(APIView):
@@ -206,3 +215,71 @@ class MyQuestionsView(APIView):
     def get(self, request):
         questions = question_queryset().filter(mentee=request.user).order_by("-created_at", "-id")
         return Response(QuestionSerializer(questions, many=True).data)
+
+
+# --- Mentor inbox and answers ------------------------------------------------
+
+
+def inbox_queryset(mentor):
+    """The mentor's matches with everything the InboxItem shape needs, in a fixed number of queries."""
+    return (
+        QuestionMatch.objects.filter(mentor=mentor)
+        .select_related("question__mentee__profile")
+        .prefetch_related("answers")
+        .order_by("-question__created_at", "-question_id")
+    )
+
+
+class InboxView(APIView):
+    permission_classes = [IsAuthenticated, IsMentor]
+
+    @extend_schema(
+        parameters=[OpenApiParameter("status", str, enum=INBOX_STATUSES, required=False)],
+        responses={200: InboxItemSerializer(many=True)},
+    )
+    def get(self, request):
+        matches = inbox_queryset(request.user)
+        wanted = request.query_params.get("status")
+        if wanted:
+            if wanted not in INBOX_STATUSES:
+                return Response({"detail": INBOX_BAD_STATUS}, status=status.HTTP_400_BAD_REQUEST)
+            matches = matches.filter(status=wanted)
+        return Response(InboxItemSerializer(matches, many=True).data)
+
+
+def _notify_answer_safely(answer):
+    try:
+        notify.notify_mentee_of_answer(answer)
+    except Exception:
+        logger.exception("notify_mentee_of_answer failed for answer %s", answer.id)
+
+
+class AnswerCreateView(APIView):
+    permission_classes = [IsAuthenticated, IsMentor]
+
+    @extend_schema(request=AnswerCreateSerializer, responses={201: AnswerSerializer})
+    def post(self, request, match_id):
+        # Ownership first: another mentor's match is a plain 404, same as a missing one, whatever the body.
+        match = (
+            QuestionMatch.objects.select_related("question__mentee", "mentor__profile")
+            .filter(pk=match_id, mentor=request.user)
+            .first()
+        )
+        if match is None:
+            return Response({"detail": NOT_FOUND}, status=status.HTTP_404_NOT_FOUND)
+
+        text = request.data.get("text") if hasattr(request.data, "get") else None
+        if not isinstance(text, str) or not text.strip():
+            return Response({"detail": ANSWER_REQUIRED}, status=status.HTTP_400_BAD_REQUEST)
+        text = text.strip()
+        if len(text) > ANSWER_MAX:
+            return Response({"detail": ANSWER_LENGTH}, status=status.HTTP_400_BAD_REQUEST)
+
+        with transaction.atomic():
+            answer = Answer.objects.create(match=match, text=text)
+            # A plain UPDATE (no read-modify-write), so concurrent answers can't race. Idempotent.
+            QuestionMatch.objects.filter(pk=match.pk).update(status="answered")
+            match.status = "answered"
+            transaction.on_commit(lambda: _notify_answer_safely(answer))
+
+        return Response(AnswerSerializer(answer).data, status=status.HTTP_201_CREATED)
