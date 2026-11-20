@@ -42,7 +42,7 @@ export default function SignupForm() {
     try {
       const { token } = await postJSON<{ token: string }>("/api/auth/register/", body);
       saveToken(token);
-      router.push("/");
+      router.push("/main");
     } catch (err) {
       setError((err as Error).message);
     } finally {

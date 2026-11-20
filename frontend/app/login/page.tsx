@@ -22,7 +22,7 @@ export default function LoginPage() {
         password: form.get("password"),
       });
       saveToken(token);
-      router.push("/");
+      router.push("/main");
     } catch (err) {
       setError((err as Error).message);
     } finally {

@@ -1,6 +1,5 @@
 @import "tailwindcss";
 
-/* ConnectHER colour tokens — edit these to restyle every page. */
 :root {
   --background: #fbf8f4;      /* page background */
   --foreground: #2a2420;      /* main text */
@@ -22,7 +21,7 @@
   :root {
     --background: #14110f;
     --foreground: #f3ede6;
-    --surface: #1d1916;
+    --surface: #38322d;
     --surface-muted: #24201c;
     --surface-sunken: #2c2723;
     --border: #332d28;
