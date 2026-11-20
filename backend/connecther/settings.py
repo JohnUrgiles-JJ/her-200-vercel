@@ -125,6 +125,10 @@ DATABASES = {
         conn_health_checks=True,
     )
 }
+if DATABASES["default"]["ENGINE"] == "django.db.backends.postgresql":
+    # Fail fast instead of hanging if Postgres is unreachable (libpq waits forever by
+    # default), so /api/health/ can actually report "db": false.
+    DATABASES["default"].setdefault("OPTIONS", {}).setdefault("connect_timeout", 5)
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
