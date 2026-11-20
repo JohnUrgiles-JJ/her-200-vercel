@@ -12,6 +12,8 @@ urlpatterns = [
     path("mentors/", views.MentorListView.as_view(), name="mentors"),
     path("questions/", views.QuestionCreateView.as_view(), name="questions"),
     path("questions/mine/", views.MyQuestionsView.as_view(), name="questions-mine"),
+    path("questions/community/", views.CommunityQuestionsView.as_view(), name="questions-community"),
+    path("questions/<int:question_id>/", views.QuestionDetailView.as_view(), name="question-detail"),
     path("inbox/", views.InboxView.as_view(), name="inbox"),
     path("matches/<int:match_id>/answer/", views.AnswerCreateView.as_view(), name="match-answer"),
 ]

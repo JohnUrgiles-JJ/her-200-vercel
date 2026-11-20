@@ -157,7 +157,7 @@ class QuestionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Question
-        fields = ["id", "text", "created_at", "matches"]
+        fields = ["id", "text", "is_public", "created_at", "matches"]
 
 
 def short_name(user):
@@ -187,6 +187,34 @@ class InboxItemSerializer(serializers.ModelSerializer):
 
     def get_mentee_name(self, obj) -> str:
         return short_name(obj.question.mentee)
+
+
+class CommunityMatchSerializer(MatchSerializer):
+    """A mentor's reply on the community feed. Leaves out the private matching reason, rank and status."""
+
+    class Meta(MatchSerializer.Meta):
+        fields = ["match_id", "mentor_id", "name", "headline", "company", "answers"]
+
+
+class CommunityQuestionSerializer(serializers.ModelSerializer):
+    """A public question on the community feed. Only answered matches are included (see
+    community_queryset in views.py); the asker is shown as "First L." like in the mentor inbox."""
+
+    mentee_name = serializers.SerializerMethodField()
+    matches = CommunityMatchSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Question
+        fields = ["id", "text", "mentee_name", "created_at", "matches"]
+
+    def get_mentee_name(self, obj) -> str:
+        return short_name(obj.mentee)
+
+
+class QuestionVisibilitySerializer(serializers.Serializer):
+    """Documents the PATCH /questions/<id>/ body for the API schema."""
+
+    is_public = serializers.BooleanField()
 
 
 class AnswerCreateSerializer(serializers.Serializer):

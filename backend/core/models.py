@@ -21,6 +21,8 @@ class MentorProfile(models.Model):
 class Question(models.Model):
     mentee = models.ForeignKey(User, on_delete=models.CASCADE, related_name="questions")
     text = models.TextField()
+    # Opt-in: a public question (and its mentor answers) shows on the community feed for everyone.
+    is_public = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     class Meta: ordering = ["-created_at"]
 

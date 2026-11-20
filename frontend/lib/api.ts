@@ -12,7 +12,11 @@ export type Match = {
   match_id: number; mentor_id: number; name: string; headline: string; company: string;
   reason: string; rank?: number; status?: Status; answers: Answer[];
 };
-export type Question = { id: number; text: string; created_at: string; matches: Match[] };
+export type Question = { id: number; text: string; is_public: boolean; created_at: string; matches: Match[] };
+/** A mentor's reply on the community feed (no private matching reason). */
+export type CommunityMatch = Pick<Match, "match_id" | "mentor_id" | "name" | "headline" | "company" | "answers">;
+/** Another mentee's public question; only matches with answers are included. */
+export type CommunityQuestion = { id: number; text: string; mentee_name: string; created_at: string; matches: CommunityMatch[] };
 export type InboxItem = {
   match_id: number; question_id: number; question_text: string; mentee_name: string;
   reason: string; status?: Status; created_at: string; answers: Answer[];
@@ -66,9 +70,16 @@ export async function request<T>(method: string, path: string, body?: unknown): 
 export const getJSON = <T>(path: string) => request<T>("GET", path);
 export const postJSON = <T>(path: string, body: unknown) => request<T>("POST", path, body);
 export const putJSON = <T>(path: string, body: unknown) => request<T>("PUT", path, body);
+export const patchJSON = <T>(path: string, body: unknown) => request<T>("PATCH", path, body);
 
 export const initials = (name: string) =>
   name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]!.toUpperCase()).join("") || "?";
+
+/** "Maria Lopez" -> "Maria L.", matching how the backend shows askers to others. */
+export function shortName(name: string) {
+  const parts = name.split(/\s+/).filter(Boolean);
+  return parts.length > 1 ? `${parts[0]} ${parts[parts.length - 1]![0]}.` : (parts[0] ?? "");
+}
 
 export function timeAgo(iso: string) {
   const s = (Date.now() - new Date(iso).getTime()) / 1000;

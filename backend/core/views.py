@@ -18,12 +18,14 @@ from .serializers import (
     AnswerCreateSerializer,
     AnswerSerializer,
     AuthResponseSerializer,
+    CommunityQuestionSerializer,
     InboxItemSerializer,
     LoginSerializer,
     MentorListItemSerializer,
     MentorProfileSerializer,
     QuestionCreateSerializer,
     QuestionSerializer,
+    QuestionVisibilitySerializer,
     SignupSerializer,
     UserSerializer,
     serialize_user,
@@ -43,6 +45,8 @@ ANSWER_LENGTH = f"Answer must be at most {ANSWER_MAX} characters."
 INBOX_STATUSES = sorted(c[0] for c in QuestionMatch.STATUS)
 INBOX_BAD_STATUS = "status must be one of: answered, sent."
 NOT_FOUND = "Not found."
+IS_PUBLIC_BOOL = "is_public must be true or false."
+COMMUNITY_LIMIT = 50
 
 
 class HealthView(APIView):
@@ -185,6 +189,9 @@ class QuestionCreateView(APIView):
         text = text.strip()
         if not QUESTION_MIN <= len(text) <= QUESTION_MAX:
             return Response({"detail": QUESTION_LENGTH}, status=status.HTTP_400_BAD_REQUEST)
+        is_public = request.data.get("is_public", False)
+        if not isinstance(is_public, bool):
+            return Response({"detail": IS_PUBLIC_BOOL}, status=status.HTTP_400_BAD_REQUEST)
 
         # Match before opening the transaction: the LLM call can take up to ~10 s and must not hold
         # a database write lock (SQLite locks the whole file) while it runs.
@@ -195,7 +202,7 @@ class QuestionCreateView(APIView):
             results = []
 
         with transaction.atomic():
-            question = Question.objects.create(mentee=request.user, text=text)
+            question = Question.objects.create(mentee=request.user, text=text, is_public=is_public)
             matches = [
                 QuestionMatch.objects.create(
                     question=question, mentor_id=r["mentor_id"], reason=r["reason"][:200], rank=rank
@@ -215,6 +222,49 @@ class MyQuestionsView(APIView):
     def get(self, request):
         questions = question_queryset().filter(mentee=request.user).order_by("-created_at", "-id")
         return Response(QuestionSerializer(questions, many=True).data)
+
+
+class QuestionDetailView(APIView):
+    permission_classes = [IsAuthenticated, IsMentee]
+
+    @extend_schema(request=QuestionVisibilitySerializer, responses={200: QuestionSerializer})
+    def patch(self, request, question_id):
+        """Share a question on the community feed, or make it private again. Owner only."""
+        if not Question.objects.filter(pk=question_id, mentee=request.user).exists():
+            return Response({"detail": NOT_FOUND}, status=status.HTTP_404_NOT_FOUND)
+        is_public = request.data.get("is_public") if hasattr(request.data, "get") else None
+        if not isinstance(is_public, bool):
+            return Response({"detail": IS_PUBLIC_BOOL}, status=status.HTTP_400_BAD_REQUEST)
+        Question.objects.filter(pk=question_id).update(is_public=is_public)
+        return Response(QuestionSerializer(question_queryset().get(pk=question_id)).data)
+
+
+def community_queryset():
+    """Public questions with their answered matches, in a fixed number of queries."""
+    answered = (
+        QuestionMatch.objects.filter(status="answered")
+        .select_related("mentor__profile", "mentor__mentor_profile")
+        .prefetch_related("answers")
+        .order_by("rank")
+    )
+    return (
+        Question.objects.filter(is_public=True)
+        .select_related("mentee__profile")
+        .prefetch_related(Prefetch("matches", queryset=answered))
+        .order_by("-created_at", "-id")
+    )
+
+
+class CommunityQuestionsView(APIView):
+    """The community feed: other mentees' public questions and the mentor answers they got.
+    Open to mentors and mentees; your own questions are left out (they're under /questions/mine/)."""
+
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(responses={200: CommunityQuestionSerializer(many=True)})
+    def get(self, request):
+        questions = community_queryset().exclude(mentee=request.user)[:COMMUNITY_LIMIT]
+        return Response(CommunityQuestionSerializer(questions, many=True).data)
 
 
 # --- Mentor inbox and answers ------------------------------------------------

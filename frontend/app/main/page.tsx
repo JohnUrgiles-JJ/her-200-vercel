@@ -5,7 +5,7 @@ import Feed from "./_components/Feed";
 import Today from "./_components/Today";
 import { Avatar, Eyebrow, Icon } from "./_components/ui";
 import { useActivity } from "./_components/session";
-import { initials, postJSON, type Question } from "@/lib/api";
+import { initials, postJSON, shortName, type Question } from "@/lib/api";
 
 export default function HomePage() {
   const activity = useActivity();
@@ -16,12 +16,14 @@ export default function HomePage() {
   async function ask(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const form = e.currentTarget;
-    const text = String(new FormData(form).get("question") ?? "").trim();
+    const data = new FormData(form);
+    const text = String(data.get("question") ?? "").trim();
+    const is_public = data.get("is_public") === "on";
     if (!text) return;
     setError("");
     setSending(true);
     try {
-      await postJSON<Question>("/api/questions/", { text });
+      await postJSON<Question>("/api/questions/", { text, is_public });
       form.reset();
       questions.reload();
     } catch (err) {
@@ -51,6 +53,10 @@ export default function HomePage() {
               <Icon name="plus" className="h-6 w-6" />
             </button>
           </form>
+          <label className="mt-3 flex items-center gap-2 text-sm text-muted">
+            <input form="ask" type="checkbox" name="is_public" disabled={sending} className="h-4 w-4 accent-primary" />
+            Share with the community, so other mentees can see it and its answers (shown as {shortName(user.full_name)})
+          </label>
           {sending && <p className="mt-3 text-sm text-muted">Finding mentors for your question…</p>}
           {error && <p className="mt-3 text-sm text-danger">{error}</p>}
         </>

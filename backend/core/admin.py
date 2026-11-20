@@ -29,7 +29,8 @@ class QuestionMatchInline(admin.TabularInline):
 
 @admin.register(Question)
 class QuestionAdmin(admin.ModelAdmin):
-    list_display = ("id", "short_text", "mentee", "created_at")
+    list_display = ("id", "short_text", "mentee", "is_public", "created_at")
+    list_filter = ("is_public",)
     search_fields = ("text", "mentee__email")
     inlines = [QuestionMatchInline]
 

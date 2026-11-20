@@ -11,7 +11,7 @@ from core import matching
 from core.models import Answer, MentorProfile, Profile, Question, QuestionMatch
 
 MATCH_KEYS = {"match_id", "mentor_id", "name", "headline", "company", "reason", "rank", "status", "answers"}
-QUESTION_KEYS = {"id", "text", "created_at", "matches"}
+QUESTION_KEYS = {"id", "text", "is_public", "created_at", "matches"}
 UX_QUESTION = "How do I break into UX design without a design degree?"
 
 MENTOR_DATA = [
