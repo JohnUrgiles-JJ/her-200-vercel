@@ -4,12 +4,9 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import AuthShell, { buttonClass, inputClass, labelClass } from "../AuthShell";
-import { postJSON, saveToken } from "@/lib/api";
+import { postJSON, saveToken, type AuthResponse, type MentorProfile, type Role } from "@/lib/api";
 
-type Role = "mentee" | "mentor";
-
-const splitList = (v: FormDataEntryValue | null) =>
-  String(v ?? "").split(",").map((s) => s.trim()).filter(Boolean);
+const text = (v: FormDataEntryValue | null) => String(v ?? "").trim();
 
 export default function SignupForm() {
   const router = useRouter();
@@ -23,25 +20,24 @@ export default function SignupForm() {
     setError("");
     setLoading(true);
     const form = new FormData(e.currentTarget);
-    const body: Record<string, unknown> = {
-      role,
-      name: form.get("name"),
-      email: form.get("email"),
-      password: form.get("password"),
-    };
-    if (role === "mentor") {
-      body.profile = {
-        headline: form.get("headline"),
-        company: form.get("company"),
-        fields: splitList(form.get("fields")),
-        topics: splitList(form.get("topics")),
-        bio: form.get("bio"),
-        years_experience: Number(form.get("years_experience")),
-      };
-    }
     try {
-      const { token } = await postJSON<{ token: string }>("/api/auth/register/", body);
+      const { token } = await postJSON<AuthResponse>("/api/signup/", {
+        role,
+        full_name: text(form.get("name")),
+        email: text(form.get("email")),
+        password: form.get("password"),
+      });
       saveToken(token);
+      if (role === "mentor") {
+        await postJSON<MentorProfile>("/api/mentor-profile/", {
+          headline: text(form.get("headline")),
+          company: text(form.get("company")),
+          fields: text(form.get("fields")),
+          open_to: text(form.get("topics")),
+          bio: text(form.get("bio")),
+          experience_years: Number(form.get("years_experience")) || 0,
+        });
+      }
       router.push("/main");
     } catch (err) {
       setError((err as Error).message);

@@ -1,27 +1,62 @@
+"use client";
+
+import { useState } from "react";
 import Feed from "./_components/Feed";
 import Today from "./_components/Today";
 import { Avatar, Eyebrow, Icon } from "./_components/ui";
-import { currentUser } from "./_components/data";
+import { useActivity } from "./_components/session";
+import { initials, postJSON, type Question } from "@/lib/api";
 
 export default function HomePage() {
+  const activity = useActivity();
+  const { user, questions } = activity;
+  const [error, setError] = useState("");
+  const [sending, setSending] = useState(false);
+
+  async function ask(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const form = e.currentTarget;
+    const text = String(new FormData(form).get("question") ?? "").trim();
+    if (!text) return;
+    setError("");
+    setSending(true);
+    try {
+      await postJSON<Question>("/api/questions/", { text });
+      form.reset();
+      questions.reload();
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setSending(false);
+    }
+  }
+
   return (
     <>
       <Eyebrow><Today /></Eyebrow>
-      <h1 className="mt-2 text-3xl font-semibold tracking-tight">Welcome back, {currentUser.name.split(" ")[0]}</h1>
+      <h1 className="mt-2 text-3xl font-semibold tracking-tight">Welcome back, {user.full_name.split(" ")[0]}</h1>
 
-      <form id="ask" className="mt-12 flex items-center gap-4 rounded border border-border bg-surface p-5">
-        <Avatar initials={currentUser.initials} />
-        <input
-          name="question"
-          placeholder="Ask the community anything…"
-          className="flex-1 bg-transparent text-lg outline-none placeholder:text-subtle"
-        />
-        <button type="submit" aria-label="Ask" className="flex h-12 w-12 items-center justify-center rounded bg-primary text-on-primary hover:bg-primary-hover">
-          <Icon name="plus" className="h-6 w-6" />
-        </button>
-      </form>
+      {user.role === "mentee" && (
+        <>
+          <form id="ask" onSubmit={ask} className="mt-12 flex items-center gap-4 rounded border border-border bg-surface p-5">
+            <Avatar initials={initials(user.full_name)} />
+            <input
+              name="question"
+              required
+              disabled={sending}
+              placeholder="Ask the community anything…"
+              className="flex-1 bg-transparent text-lg outline-none placeholder:text-subtle"
+            />
+            <button type="submit" disabled={sending} aria-label="Ask" className="flex h-12 w-12 items-center justify-center rounded bg-primary text-on-primary hover:bg-primary-hover disabled:opacity-60">
+              <Icon name="plus" className="h-6 w-6" />
+            </button>
+          </form>
+          {sending && <p className="mt-3 text-sm text-muted">Finding mentors for your question…</p>}
+          {error && <p className="mt-3 text-sm text-danger">{error}</p>}
+        </>
+      )}
 
-      <Feed />
+      <Feed activity={activity} />
     </>
   );
 }

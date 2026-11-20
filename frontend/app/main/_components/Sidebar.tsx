@@ -3,17 +3,19 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Avatar, Icon } from "./ui";
-import { currentUser } from "./data";
+import { useSession } from "./session";
+import { initials } from "@/lib/api";
 
 const nav = [
-  { href: "/main", label: "Home", icon: "home", badge: 0 },
-  { href: "/main/messages", label: "Messages", icon: "chat", badge: 3 },
-  { href: "/main/notifications", label: "Notifications", icon: "bell", badge: 7 },
-  { href: "/main/my-mentors", label: "My mentors", icon: "users", badge: 0 },
+  { href: "/main", label: "Home", icon: "home" },
+  { href: "/main/messages", label: "Messages", icon: "chat" },
+  { href: "/main/notifications", label: "Notifications", icon: "bell" },
+  { href: "/main/my-mentors", label: "My mentors", icon: "users" },
 ] as const;
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const { user, logout } = useSession();
   return (
     <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-border bg-surface px-5 py-8 md:flex">
       <Link href="/main" className="flex items-center gap-2 px-2 text-xl font-semibold tracking-tight">
@@ -38,24 +40,22 @@ export default function Sidebar() {
               }`}
             >
               <Icon name={item.icon} />
-              <span className="flex-1">{item.label}</span>
-              {item.badge > 0 && (
-                <span className="flex h-6 min-w-6 items-center justify-center rounded-full bg-surface-sunken px-1.5 text-xs font-semibold">
-                  {item.badge}
-                </span>
-              )}
+              <span className="flex-1">{item.href === "/main/my-mentors" && user.role === "mentor" ? "My mentees" : item.label}</span>
             </Link>
           );
         })}
       </nav>
 
+      <button onClick={logout} className="mt-auto mb-2 rounded-lg px-3 py-2 text-left text-sm text-muted hover:bg-surface-muted">
+        Log out
+      </button>
       <Link
         href="/main/profile"
-        className={`mt-auto flex items-center gap-3 rounded-lg p-2 hover:bg-surface-muted ${pathname === "/main/profile" ? "bg-surface-muted" : ""}`}
+        className={` flex items-center gap-3 rounded-lg p-2 hover:bg-surface-muted ${pathname === "/main/profile" ? "bg-surface-muted" : ""}`}
       >
-        <Avatar initials={currentUser.initials} size="sm" />
+        <Avatar initials={initials(user.full_name)} size="sm" />
         <span className="flex-1">
-          <span className="block font-medium">{currentUser.name}</span>
+          <span className="block font-medium">{user.full_name}</span>
           <span className="block text-sm text-subtle">View profile</span>
         </span>
         <Icon name="dots" className="h-5 w-5 text-muted" />

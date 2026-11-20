@@ -1,28 +1,52 @@
-import { Eyebrow, Avatar, Icon } from "./ui";
-import { events, mentors } from "./data";
+"use client";
+
+import Link from "next/link";
+import { Eyebrow, Avatar } from "./ui";
+import { useApi, useSession } from "./session";
+import { initials, type InboxItem, type MentorListItem } from "@/lib/api";
+
+// No events endpoint on the backend yet — these stay static.
+const events = [
+  { day: "26", month: "JUN", title: "Making work that feels like you", meta: "Live studio chat · 7 PM" },
+  { day: "02", month: "JUL", title: "Portfolio swap: brand edition", meta: "Community session · 6 PM" },
+];
 
 export default function RightRail() {
+  const { user } = useSession();
+  const isMentor = user.role === "mentor";
+  // Mentors only see mentees (from their inbox); mentees see mentors.
+  const mentorList = useApi<MentorListItem[]>(isMentor ? null : "/api/mentors/");
+  const inbox = useApi<InboxItem[]>(isMentor ? "/api/inbox/" : null);
+
+  const people = isMentor
+    ? [...new Map((inbox.data ?? []).map((i) => [i.mentee_name, i])).values()].map((i) => ({
+        key: `q${i.match_id}`, name: i.mentee_name, line1: "Mentee", line2: i.question_text,
+      }))
+    : (mentorList.data ?? []).map((m) => ({
+        key: `m${m.mentor_id}`, name: m.name, line1: `${m.headline}${m.company ? ` · ${m.company}` : ""}`, line2: m.fields,
+      }));
+  const loaded = (isMentor ? inbox.data : mentorList.data) !== null;
   return (
     <aside className="sticky top-0 hidden h-screen w-80 shrink-0 overflow-y-auto border-l border-border bg-surface-muted px-7 py-10 xl:block">
       <Eyebrow>People to know</Eyebrow>
       <div className="mt-1 flex items-baseline justify-between">
-        <h2 className="text-2xl font-semibold tracking-tight">Mentors for you</h2>
-        <a href="/main/my-mentors" className="text-sm font-medium text-primary">See all</a>
+        <h2 className="text-2xl font-semibold tracking-tight">{isMentor ? "Your mentees" : "Mentors"}</h2>
+        <Link href={isMentor ? "/main/messages" : "/main/my-mentors"} className="text-sm font-medium text-primary">See all</Link>
       </div>
       <ul className="mt-6 space-y-5 border-b border-border pb-8">
-        {mentors.map((m) => (
-          <li key={m.name} className="flex items-center gap-3">
-            <Avatar initials={m.initials} />
-            <div className="flex-1">
-              <p className="font-medium">{m.name}</p>
-              <p className="text-xs text-muted">{m.role} · {m.company}</p>
-              <p className="mt-1 text-xs font-semibold text-primary">{m.match}% match</p>
+        {people.slice(0, 3).map((p) => (
+          <li key={p.key} className="flex items-center gap-3">
+            <Avatar initials={initials(p.name)} />
+            <div className="min-w-0 flex-1">
+              <p className="font-medium">{p.name}</p>
+              <p className="text-xs text-muted">{p.line1}</p>
+              <p className="mt-1 truncate text-xs font-semibold text-primary">{p.line2}</p>
             </div>
-            <button aria-label={`Follow ${m.name}`} className="flex h-10 w-10 items-center justify-center rounded border border-border-strong bg-surface hover:bg-surface-sunken">
-              <Icon name="plus" className="h-4 w-4" />
-            </button>
           </li>
         ))}
+        {loaded && people.length === 0 && (
+          <li className="text-sm text-muted">{isMentor ? "No mentees matched with you yet." : "No mentors yet."}</li>
+        )}
       </ul>
 
       <div className="mt-8">

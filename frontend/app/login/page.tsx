@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import AuthShell, { buttonClass, inputClass, labelClass } from "../AuthShell";
-import { postJSON, saveToken } from "@/lib/api";
+import { postJSON, saveToken, type AuthResponse } from "@/lib/api";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -17,7 +17,7 @@ export default function LoginPage() {
     setLoading(true);
     const form = new FormData(e.currentTarget);
     try {
-      const { token } = await postJSON<{ token: string }>("/api/auth/login/", {
+      const { token } = await postJSON<AuthResponse>("/api/login/", {
         email: form.get("email"),
         password: form.get("password"),
       });

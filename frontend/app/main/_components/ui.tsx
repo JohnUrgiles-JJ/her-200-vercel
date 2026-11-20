@@ -1,7 +1,7 @@
 const avatarTones = ["bg-primary/15 text-primary", "bg-secondary/20 text-secondary", "bg-surface-sunken text-foreground"];
 
 export function Avatar({ initials, size = "md" }: { initials: string; size?: "sm" | "md" | "lg" }) {
-  const tone = avatarTones[(initials.charCodeAt(0) + initials.charCodeAt(1)) % avatarTones.length];
+  const tone = avatarTones[((initials.charCodeAt(0) || 0) + (initials.charCodeAt(1) || 0)) % avatarTones.length];
   const dims = { sm: "h-10 w-10 text-xs", md: "h-14 w-14 text-sm", lg: "h-20 w-20 text-lg" }[size];
   return (
     <span className={`flex shrink-0 items-center justify-center rounded-full font-semibold ${dims} ${tone}`}>

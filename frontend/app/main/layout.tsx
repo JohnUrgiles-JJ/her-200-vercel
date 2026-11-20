@@ -1,9 +1,11 @@
 import Sidebar from "./_components/Sidebar";
 import RightRail from "./_components/RightRail";
 import { Icon } from "./_components/ui";
+import { SessionProvider } from "./_components/session";
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
   return (
+    <SessionProvider>
     <div className="flex min-h-screen bg-background">
       <Sidebar />
       <div className="flex min-w-0 flex-1 flex-col">
@@ -21,5 +23,6 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
       </div>
       <RightRail />
     </div>
+    </SessionProvider>
   );
 }
