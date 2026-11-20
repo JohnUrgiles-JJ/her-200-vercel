@@ -8,28 +8,50 @@ backend/.env, loaded below with python-dotenv. See .env.example.
 import os
 from pathlib import Path
 
+import dj_database_url
+from django.core.exceptions import ImproperlyConfigured
 from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Local dev reads backend/.env. On Railway there is no .env file; variables come
+# from the service's Variables tab. load_dotenv never overrides real env vars.
 load_dotenv(BASE_DIR / ".env")
 
 
-def env_bool(name, default=False):
-    """Read a true/false env var ("true", "1", "yes" count as true)."""
-    value = os.getenv(name)
-    if value is None or value.strip() == "":
-        return default
-    return value.strip().lower() in ("1", "true", "yes", "on")
+def env_list(name):
+    """Read a comma-separated env var as a list, dropping empty items."""
+    return [item.strip() for item in os.getenv(name, "").split(",") if item.strip()]
 
 
 # --- Core ---------------------------------------------------------------
 
-SECRET_KEY = os.getenv("DJANGO_SECRET_KEY") or "dev-secret-change-me"
-DEBUG = env_bool("DEBUG", default=True)
+DEBUG = os.getenv("DEBUG", "true").lower() == "true"
 
-# Hackathon only: accept any host.
+SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "")
+if not SECRET_KEY:
+    if DEBUG:
+        SECRET_KEY = "dev-secret-change-me"
+    else:
+        raise ImproperlyConfigured(
+            "DJANGO_SECRET_KEY is not set. It is required when DEBUG is false (production). "
+            "Set it in Railway's Variables tab."
+        )
+
+# HACKATHON ONLY: accept any Host header. This also covers Railway's
+# healthcheck host (healthcheck.railway.app). Lock this down for a real launch.
 ALLOWED_HOSTS = ["*"]
+
+# Railway terminates HTTPS at its edge and forwards plain HTTP with
+# X-Forwarded-Proto, so this makes request.is_secure() true behind it.
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
+FRONTEND_URL = (os.getenv("FRONTEND_URL") or "http://localhost:5173").rstrip("/")
+
+# Needed for POSTs from a browser session (e.g. the Django admin login) over HTTPS.
+CSRF_TRUSTED_ORIGINS = ["https://*.up.railway.app"]
+if os.getenv("FRONTEND_URL"):
+    CSRF_TRUSTED_ORIGINS.append(FRONTEND_URL)
 
 
 # --- Apps ---------------------------------------------------------------
@@ -53,6 +75,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",  # must be first
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",  # directly after SecurityMiddleware
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -92,11 +115,15 @@ CHANNEL_LAYERS = {
 
 # --- Database -----------------------------------------------------------
 
+# Railway sets DATABASE_URL (Postgres). Without it, local dev uses SQLite.
+# conn_max_age=0 (close the connection after each request) because Django's docs
+# say: "When using ASGI, persistent connections should be disabled." We run Daphne (ASGI).
 DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
-    }
+    "default": dj_database_url.config(
+        default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
+        conn_max_age=0,
+        conn_health_checks=True,
+    )
 }
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
@@ -141,6 +168,11 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
 ]
+if os.getenv("FRONTEND_URL"):
+    CORS_ALLOWED_ORIGINS.append(FRONTEND_URL)
+# Optional extra origins, comma-separated, e.g. a Vercel preview URL.
+CORS_ALLOWED_ORIGINS += [origin.rstrip("/") for origin in env_list("EXTRA_CORS_ORIGINS")]
+CORS_ALLOWED_ORIGINS = list(dict.fromkeys(CORS_ALLOWED_ORIGINS))  # drop duplicates
 
 
 # --- Email --------------------------------------------------------------
@@ -161,7 +193,7 @@ DEFAULT_FROM_EMAIL = (
 
 # --- App settings -------------------------------------------------------
 
-FRONTEND_URL = os.getenv("FRONTEND_URL") or "http://localhost:5173"
+# FRONTEND_URL is defined near the top (CORS/CSRF use it).
 
 
 # --- Internationalization / static ----------------------------------------
@@ -171,4 +203,35 @@ TIME_ZONE = "UTC"
 USE_I18N = True
 USE_TZ = True
 
-STATIC_URL = "static/"
+# Static files (the Django admin's CSS/JS) are collected into STATIC_ROOT by
+# `collectstatic` and served by WhiteNoise, so no separate file server is needed.
+STATIC_URL = "/static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
+
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
+
+
+# --- Logging --------------------------------------------------------------
+
+# Everything goes to stdout/stderr, which Railway shows in the service's logs.
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "simple": {"format": "{asctime} {levelname} {name}: {message}", "style": "{"},
+    },
+    "handlers": {
+        "console": {"class": "logging.StreamHandler", "formatter": "simple"},
+    },
+    "loggers": {
+        "django": {"handlers": ["console"], "level": "INFO", "propagate": False},
+        "core": {"handlers": ["console"], "level": "INFO", "propagate": False},
+    },
+}

@@ -4,6 +4,7 @@ from . import views
 
 # Mounted under /api/ in connecther/urls.py.
 urlpatterns = [
+    path("health/", views.HealthView.as_view(), name="health"),
     path("signup/", views.SignupView.as_view(), name="signup"),
     path("login/", views.LoginView.as_view(), name="login"),
     path("me/", views.MeView.as_view(), name="me"),

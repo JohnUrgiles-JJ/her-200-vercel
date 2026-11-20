@@ -1,6 +1,8 @@
+import logging
+
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
-from django.db import IntegrityError, transaction
+from django.db import DatabaseError, IntegrityError, connection, transaction
 from django.db.models import Q
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
@@ -21,9 +23,30 @@ from .serializers import (
     serialize_user,
 )
 
+logger = logging.getLogger(__name__)
+
 DUPLICATE_EMAIL = "An account with this email already exists."
 INVALID_LOGIN = "Invalid email or password."
 NO_MENTOR_PROFILE = "Mentor profile not found."
+
+
+class HealthView(APIView):
+    """Public health check for Railway. Always 200; "db" shows whether SELECT 1 works."""
+
+    permission_classes = [AllowAny]
+    authentication_classes = []
+
+    @extend_schema(responses={200: {"type": "object", "properties": {"status": {"type": "string"}, "db": {"type": "boolean"}}}})
+    def get(self, request):
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT 1")
+                cursor.fetchone()
+            db_ok = True
+        except DatabaseError:
+            logger.exception("Health check: database query failed")
+            db_ok = False
+        return Response({"status": "ok", "db": db_ok})
 
 
 class SignupView(APIView):
