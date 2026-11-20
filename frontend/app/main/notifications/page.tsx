@@ -1,6 +1,6 @@
 "use client";
 
-import { Avatar, PageHeader } from "../_components/ui";
+import { Avatar, EmptyState, PageHeader } from "../_components/ui";
 import { Status, useActivity } from "../_components/session";
 import { initials, timeAgo } from "@/lib/api";
 
@@ -25,6 +25,9 @@ export default function NotificationsPage() {
           ]),
         );
   notes.sort((a, b) => b.at.localeCompare(a.at));
+
+  if (src.data && notes.length === 0)
+    return <EmptyState icon="bell" title="Notifications" text="You're all caught up. Answers, matches and updates will show up here." />;
 
   return (
     <>

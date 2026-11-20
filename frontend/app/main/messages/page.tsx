@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Avatar, PageHeader } from "../_components/ui";
+import { Avatar, EmptyState, PageHeader } from "../_components/ui";
 import { Status, useActivity } from "../_components/session";
 import { initials, postJSON, timeAgo, type Answer } from "@/lib/api";
 
@@ -40,6 +40,9 @@ export default function MessagesPage() {
       setSending(false);
     }
   }
+
+  if (src.data && threads.length === 0)
+    return <EmptyState icon="chat" title="Messages" text="Your messages will live here. This view is ready for your next connection." />;
 
   return (
     <>

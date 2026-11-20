@@ -17,6 +17,7 @@ export type InboxItem = {
   match_id: number; question_id: number; question_text: string; mentee_name: string;
   reason: string; status?: Status; created_at: string; answers: Answer[];
 };
+export type FeedPost = { id: number; text: string; created_at: string; author_name: string; answer_count: number };
 export type MentorProfile = {
   headline: string; company?: string; fields: string; open_to: string; bio?: string; experience_years?: number;
 };

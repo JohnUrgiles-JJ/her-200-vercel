@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 const avatarTones = ["bg-primary/15 text-primary", "bg-secondary/20 text-secondary", "bg-surface-sunken text-foreground"];
 
 export function Avatar({ initials, size = "md" }: { initials: string; size?: "sm" | "md" | "lg" }) {
@@ -24,7 +26,7 @@ export function PageHeader({ eyebrow, title, subtitle }: { eyebrow?: string; tit
   );
 }
 
-type IconName = "home" | "chat" | "bell" | "users" | "search" | "plus" | "heart" | "bookmark" | "dots";
+type IconName = "home" | "chat" | "bell" | "users" | "search" | "plus" | "heart" | "bookmark" | "dots" | "arrowLeft";
 const paths: Record<IconName, React.ReactNode> = {
   home: <path d="M3 10.5 12 3l9 7.5V21h-6v-6H9v6H3z" />,
   chat: <path d="M4 12a8 8 0 1 1 3.5 6.6L4 20l1.2-3.6A8 8 0 0 1 4 12z" />,
@@ -34,6 +36,7 @@ const paths: Record<IconName, React.ReactNode> = {
   plus: <path d="M12 5v14M5 12h14" />,
   heart: <path d="M12 20s-8-4.6-8-10.5A4.5 4.5 0 0 1 12 7a4.5 4.5 0 0 1 8 2.5C20 15.4 12 20 12 20z" />,
   bookmark: <path d="M6 3h12v18l-6-4-6 4z" />,
+  arrowLeft: <path d="M19 12H5M11 6l-6 6 6 6" />,
   dots: <path d="M5 12h.01M12 12h.01M19 12h.01" strokeWidth={3} />,
 };
 
@@ -42,5 +45,21 @@ export function Icon({ name, className = "h-5 w-5" }: { name: IconName; classNam
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden>
       {paths[name]}
     </svg>
+  );
+}
+
+export function EmptyState({ icon, eyebrow = "Your space", title, text }: { icon: IconName; eyebrow?: string; title: string; text: string }) {
+  return (
+    <div className="flex min-h-[60vh] flex-col justify-center">
+      <span className="flex h-20 w-20 items-center justify-center rounded bg-primary text-foreground">
+        <Icon name={icon} className="h-9 w-9" />
+      </span>
+      <div className="mt-8"><Eyebrow>{eyebrow}</Eyebrow></div>
+      <h1 className="mt-2 text-5xl font-semibold tracking-tight">{title}</h1>
+      <p className="mt-6 text-lg text-muted">{text}</p>
+      <Link href="/main" className="mt-8 flex w-fit items-center gap-3 rounded bg-foreground px-6 py-4 font-medium text-background hover:opacity-90">
+        <Icon name="arrowLeft" /> Back to the community
+      </Link>
+    </div>
   );
 }
