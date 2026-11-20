@@ -186,7 +186,7 @@ class QuestionCreateView(APIView):
         if not QUESTION_MIN <= len(text) <= QUESTION_MAX:
             return Response({"detail": QUESTION_LENGTH}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Match before opening the transaction: the LLM call can take up to ~15 s and must not hold
+        # Match before opening the transaction: the LLM call can take up to ~10 s and must not hold
         # a database write lock (SQLite locks the whole file) while it runs.
         try:
             results = matching.match_mentors(text, k=3)

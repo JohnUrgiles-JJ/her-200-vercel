@@ -74,6 +74,8 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",  # must be first
+    # Right after CORS: error responses under /api/ become JSON {"detail": ...} and still get CORS headers.
+    "core.exceptions.ApiJsonErrorMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",  # directly after SecurityMiddleware
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -153,6 +155,8 @@ REST_FRAMEWORK = {
         "rest_framework.permissions.IsAuthenticated",
     ],
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    # Unhandled exceptions in API views -> 500 {"detail": "..."} (JSON), never an HTML page.
+    "EXCEPTION_HANDLER": "core.exceptions.api_exception_handler",
 }
 
 # Swagger UI at /api/docs/, raw OpenAPI schema at /api/schema/.
@@ -166,11 +170,13 @@ SPECTACULAR_SETTINGS = {
 }
 
 
-# --- CORS (React dev server) --------------------------------------------
+# --- CORS (frontend dev servers) ----------------------------------------
 
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",
+    "http://localhost:5173",  # Vite default
     "http://127.0.0.1:5173",
+    "http://localhost:3000",  # the frontend team's dev server
+    "http://127.0.0.1:3000",
 ]
 if os.getenv("FRONTEND_URL"):
     CORS_ALLOWED_ORIGINS.append(FRONTEND_URL)

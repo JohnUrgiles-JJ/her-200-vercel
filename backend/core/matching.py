@@ -22,7 +22,9 @@ from .models import MentorProfile
 
 logger = logging.getLogger(__name__)
 
-LLM_TIMEOUT_SECONDS = 15.0
+# Per-request timeout (max_retries=0, so this is the worst case). Measured against a server that never
+# answers: 10 s, then the keyword fallback. A normal Haiku/gpt-4o-mini match takes a few seconds.
+LLM_TIMEOUT_SECONDS = 10.0
 ANTHROPIC_MAX_TOKENS = 500
 DEFAULT_ANTHROPIC_MODEL = "claude-haiku-5-5"
 DEFAULT_OPENAI_MODEL = "gpt-4o-mini"
@@ -86,6 +88,38 @@ def _provider_config():
     if provider != "none":
         logger.warning("Unknown LLM_PROVIDER %r; using keyword fallback.", provider)
     return "none", "", ""
+
+
+FALLBACK_NOTICE = "Using keyword fallback for matching."
+
+
+def log_startup_status():
+    """One clear line at server start saying how matching will work. Called from connecther/asgi.py.
+
+    Returns the message (for tests). A warning when matching will use the keyword fallback, info otherwise.
+    """
+    raw = _env("LLM_PROVIDER", "none").lower() or "none"
+    if raw == "none":
+        message = f"LLM_PROVIDER=none. {FALLBACK_NOTICE}"
+    elif raw not in ("anthropic", "openai"):
+        message = f"Unknown LLM_PROVIDER={raw!r} (use anthropic, openai or none). {FALLBACK_NOTICE}"
+    else:
+        _, api_key, model = _provider_config()
+        if api_key:
+            message = (
+                f"Matching uses {raw} ({model}), {LLM_TIMEOUT_SECONDS:g}s timeout; "
+                "keyword fallback on any LLM error."
+            )
+            logger.info(message)
+            # Import the SDK now (it takes a few seconds) so the first question of the demo doesn't pay it.
+            try:
+                __import__(raw)
+            except Exception:
+                logger.warning("Could not import the %s SDK; every match will use the keyword fallback.", raw)
+            return message
+        message = f"No LLM key set: LLM_PROVIDER={raw} but {raw.upper()}_API_KEY is empty. {FALLBACK_NOTICE}"
+    logger.warning(message)
+    return message
 
 
 # --- Prompt ------------------------------------------------------------------

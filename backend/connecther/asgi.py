@@ -13,11 +13,20 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "connecther.settings")
 # Must run before importing anything that touches models (consumers, ws_auth): it sets Django up.
 django_asgi_app = get_asgi_application()
 
+import sys  # noqa: E402
+
 from channels.routing import ProtocolTypeRouter, URLRouter  # noqa: E402
 from django.urls import re_path  # noqa: E402
 
 from core.consumers import NotificationConsumer  # noqa: E402
+from core.matching import log_startup_status  # noqa: E402
 from core.ws_auth import TokenAuthMiddleware  # noqa: E402
+
+# This module is loaded once by the serving process (runserver/Daphne), so this prints once at startup:
+# a warning like "No LLM key set ... Using keyword fallback for matching." or the provider in use.
+# Skipped under `manage.py test`, which imports this module for the WebSocket tests.
+if "test" not in sys.argv[1:2]:
+    log_startup_status()
 
 websocket_urlpatterns = [
     # The contract URL is /ws/notifications/; the trailing slash is optional so a client typo still connects.
