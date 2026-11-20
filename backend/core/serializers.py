@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import MentorProfile, Profile
+from .models import Answer, MentorProfile, Profile, Question, QuestionMatch
 
 
 def serialize_user(user):
@@ -103,3 +103,64 @@ class MentorListItemSerializer(serializers.ModelSerializer):
     def get_name(self, obj) -> str:
         profile = getattr(obj.user, "profile", None)
         return profile.full_name if profile else (obj.user.get_full_name() or obj.user.username)
+
+
+# --- Questions and matches ---------------------------------------------------
+
+
+def _display_name(user):
+    profile = getattr(user, "profile", None)
+    return profile.full_name if profile else (user.get_full_name() or user.username)
+
+
+class AnswerSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Answer
+        fields = ["id", "text", "created_at"]
+
+
+class MatchSerializer(serializers.ModelSerializer):
+    """The `Match` shape from Section 3.1. Expects mentor__profile, mentor__mentor_profile and answers
+    to be prefetched (see question_queryset in views.py)."""
+
+    match_id = serializers.IntegerField(source="id", read_only=True)
+    mentor_id = serializers.IntegerField(read_only=True)
+    name = serializers.SerializerMethodField()
+    headline = serializers.SerializerMethodField()
+    company = serializers.SerializerMethodField()
+    answers = AnswerSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = QuestionMatch
+        fields = ["match_id", "mentor_id", "name", "headline", "company", "reason", "rank", "status", "answers"]
+
+    def get_name(self, obj) -> str:
+        return _display_name(obj.mentor)
+
+    def _mentor_profile(self, obj):
+        # RelatedObjectDoesNotExist is an AttributeError, so a deleted MentorProfile gives None.
+        return getattr(obj.mentor, "mentor_profile", None)
+
+    def get_headline(self, obj) -> str:
+        mp = self._mentor_profile(obj)
+        return mp.headline if mp else ""
+
+    def get_company(self, obj) -> str:
+        mp = self._mentor_profile(obj)
+        return mp.company if mp else ""
+
+
+class QuestionSerializer(serializers.ModelSerializer):
+    """The `Question` shape from Section 3.1. Matches come out in rank order."""
+
+    matches = MatchSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Question
+        fields = ["id", "text", "created_at", "matches"]
+
+
+class QuestionCreateSerializer(serializers.Serializer):
+    """Documents the POST /questions/ body for the API schema. Validation is done in the view."""
+
+    text = serializers.CharField(min_length=10, max_length=1000)

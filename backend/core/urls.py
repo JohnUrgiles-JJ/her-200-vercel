@@ -10,4 +10,6 @@ urlpatterns = [
     path("me/", views.MeView.as_view(), name="me"),
     path("mentor-profile/", views.MentorProfileView.as_view(), name="mentor-profile"),
     path("mentors/", views.MentorListView.as_view(), name="mentors"),
+    path("questions/", views.QuestionCreateView.as_view(), name="questions"),
+    path("questions/mine/", views.MyQuestionsView.as_view(), name="questions-mine"),
 ]

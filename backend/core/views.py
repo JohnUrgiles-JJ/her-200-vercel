@@ -3,7 +3,7 @@ import logging
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from django.db import DatabaseError, IntegrityError, connection, transaction
-from django.db.models import Q
+from django.db.models import Prefetch, Q
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.authtoken.models import Token
@@ -11,13 +11,16 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import MentorProfile, Profile
-from .permissions import IsMentor
+from . import matching, notify
+from .models import MentorProfile, Profile, Question, QuestionMatch
+from .permissions import IsMentee, IsMentor
 from .serializers import (
     AuthResponseSerializer,
     LoginSerializer,
     MentorListItemSerializer,
     MentorProfileSerializer,
+    QuestionCreateSerializer,
+    QuestionSerializer,
     SignupSerializer,
     UserSerializer,
     serialize_user,
@@ -28,6 +31,9 @@ logger = logging.getLogger(__name__)
 DUPLICATE_EMAIL = "An account with this email already exists."
 INVALID_LOGIN = "Invalid email or password."
 NO_MENTOR_PROFILE = "Mentor profile not found."
+QUESTION_MIN, QUESTION_MAX = 10, 1000
+QUESTION_REQUIRED = "Question text is required."
+QUESTION_LENGTH = f"Question must be between {QUESTION_MIN} and {QUESTION_MAX} characters."
 
 
 class HealthView(APIView):
@@ -139,3 +145,64 @@ class MentorListView(APIView):
             .order_by("user_id")
         )
         return Response(MentorListItemSerializer(mentors, many=True).data)
+
+
+# --- Questions ---------------------------------------------------------------
+
+
+def question_queryset():
+    """Questions with everything the Question shape needs, in a fixed number of queries."""
+    matches = QuestionMatch.objects.select_related("mentor__profile", "mentor__mentor_profile").prefetch_related(
+        "answers"
+    ).order_by("rank")
+    return Question.objects.prefetch_related(Prefetch("matches", queryset=matches))
+
+
+def _notify_safely(question, matches):
+    try:
+        notify.notify_matched_mentors(question, matches)
+    except Exception:
+        logger.exception("notify_matched_mentors failed for question %s", question.id)
+
+
+class QuestionCreateView(APIView):
+    permission_classes = [IsAuthenticated, IsMentee]
+
+    @extend_schema(request=QuestionCreateSerializer, responses={201: QuestionSerializer})
+    def post(self, request):
+        text = request.data.get("text") if hasattr(request.data, "get") else None
+        if not isinstance(text, str) or not text.strip():
+            return Response({"detail": QUESTION_REQUIRED}, status=status.HTTP_400_BAD_REQUEST)
+        text = text.strip()
+        if not QUESTION_MIN <= len(text) <= QUESTION_MAX:
+            return Response({"detail": QUESTION_LENGTH}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Match before opening the transaction: the LLM call can take up to ~15 s and must not hold
+        # a database write lock (SQLite locks the whole file) while it runs.
+        try:
+            results = matching.match_mentors(text, k=3)
+        except Exception:  # match_mentors already falls back internally; this is a last resort
+            logger.exception("match_mentors raised; saving the question with no matches")
+            results = []
+
+        with transaction.atomic():
+            question = Question.objects.create(mentee=request.user, text=text)
+            matches = [
+                QuestionMatch.objects.create(
+                    question=question, mentor_id=r["mentor_id"], reason=r["reason"][:200], rank=rank
+                )
+                for rank, r in enumerate(results, start=1)
+            ]
+            transaction.on_commit(lambda: _notify_safely(question, matches))
+
+        question = question_queryset().get(pk=question.pk)
+        return Response(QuestionSerializer(question).data, status=status.HTTP_201_CREATED)
+
+
+class MyQuestionsView(APIView):
+    permission_classes = [IsAuthenticated, IsMentee]
+
+    @extend_schema(responses={200: QuestionSerializer(many=True)})
+    def get(self, request):
+        questions = question_queryset().filter(mentee=request.user).order_by("-created_at", "-id")
+        return Response(QuestionSerializer(questions, many=True).data)
